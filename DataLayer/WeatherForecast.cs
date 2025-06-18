@@ -15,13 +15,13 @@
 
         public string? Summary { get; set; }
 
-        [LogMessage("Generating Get Summaries Forecasts.")]
+        [LogMessage("Generating Get Summaries Forecasts.", "WeatherForecast", "CTE")]
         public IEnumerable<WeatherForecast> GetSummariesForecasts()
         {
             var forecasts = GenerateForecasts();
             return AssignSummaries(forecasts);
         }
-        [LogMessage("Generating weather forecasts .")]
+        [LogMessage("Generating weather forecasts .", "WeatherForecast", "CTE")]
         public IEnumerable<WeatherForecast> GenerateForecasts()
         {
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -30,7 +30,7 @@
                 TemperatureC = Random.Shared.Next(-20, 55)
             });
         }
-        [LogMessage("Generating Assign Summaries weather forecasts.")]
+        [LogMessage("Generating Assign Summaries weather forecasts.", "WeatherForecast", "CTE")]
         public IEnumerable<WeatherForecast> AssignSummaries(IEnumerable<WeatherForecast> forecasts)
         {
             return forecasts.Select(forecast =>
@@ -39,7 +39,7 @@
                 return forecast;
             });
         }
-        [LogMessage("Generating forecasts asynchronously.")]
+        [LogMessage("Generating forecasts asynchronously.", "WeatherForecast", "CTE")]
         public async Task<IEnumerable<WeatherForecast>> GenerateForecastsAsync()
         {
             return await Task.Run(() =>
@@ -51,7 +51,7 @@
                 });
             });
         }
-        [LogMessage("Generating Assign Summaries asynchronously.")]
+        [LogMessage("Generating Assign Summaries asynchronously." ,"WeatherForecast", "CTE")]
         public async Task<IEnumerable<WeatherForecast>> AssignSummariesAsync(IEnumerable<WeatherForecast> forecasts)
         {
             return await Task.Run(() =>
@@ -63,7 +63,7 @@
                 });
             });
         }
-        [LogMessage("Add forecasts asynchronously.")]
+        [LogMessage("Add forecasts asynchronously." ,"WeatherForecast", "CTE")]
         public async Task<bool> AddForecastAsync(WeatherForecast forecast)
         {
             return await Task.Run(() =>

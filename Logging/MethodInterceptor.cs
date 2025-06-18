@@ -8,6 +8,7 @@ namespace Logging
 {
     public class MethodInterceptor : IAsyncInterceptor
     {
+        private static readonly ThreadLocal<int> CallDepth = new ThreadLocal<int>(() => 0);
         public void Intercept(IInvocation invocation)
         {
             // Start timing
@@ -76,22 +77,31 @@ namespace Logging
 
         public void InterceptSynchronous(IInvocation invocation)
         {
+            CallDepth.Value++; // Increment call depth
             // Handle synchronous methods
             var stopwatch = Stopwatch.StartNew();
 
+            // Get method information
             var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
+            var className = methodInfo.DeclaringType?.Name; // Get the class name
+            var methodName = methodInfo.Name; // Get the method name
+            var solutionName = Assembly.GetExecutingAssembly().GetName().Name; // Get the solution name
+
+            // Get custom attribute (if present)
             var logMessageAttribute = methodInfo.GetCustomAttribute<LogMessageAttribute>();
             var customMessage = logMessageAttribute?.Message;
 
             Console.WriteLine($"Intercepting synchronous method: {invocation.Method.Name}");
+            Console.WriteLine($"Intercepting asynchronous method with result: {methodName}");
+            Console.WriteLine($"Class Name: {className}, Solution Name: {solutionName}");
             if (!string.IsNullOrEmpty(customMessage))
             {
-                Console.WriteLine($"Custom Message: {customMessage}");
+                Console.WriteLine($"Custom Message: {customMessage}, Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
             }
 
             if (invocation.Arguments.Length > 0)
             {
-                Console.WriteLine("Request (Method Arguments in JSON):");
+                Console.WriteLine($"Request (Method Arguments in JSON): Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                 var argumentsJson = JsonSerializer.Serialize(invocation.Arguments);
                 Console.WriteLine(argumentsJson);
             }
@@ -103,42 +113,62 @@ namespace Logging
                 if (invocation.Method.ReturnType != typeof(void))
                 {
                     var responseJson = JsonSerializer.Serialize(invocation.ReturnValue);
-                    Console.WriteLine("Response (Return Value in JSON):");
+                    Console.WriteLine($"Response (Return Value in JSON): Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                     Console.WriteLine(responseJson);
                 }
 
-                Console.WriteLine($"Method {invocation.Method.Name} executed successfully.");
+                Console.WriteLine($"Method {invocation.Method.Name} executed successfully. Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in method {invocation.Method.Name}: {ex.Message}");
+                Console.WriteLine($"Exception in method {invocation.Method.Name}: {ex.Message}  Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                 throw;
             }
             finally
             {
                 stopwatch.Stop();
-                Console.WriteLine($"Method {invocation.Method.Name} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"Method {invocation.Method.Name} executed in {stopwatch.ElapsedMilliseconds} ms.  Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
+                // Log method name, class name, solution name, and duration
+                Console.WriteLine($"Method {methodName} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"Class Name: {className}, Solution Name: {solutionName}");
+
+                // Check if this is the last message
+                if (CallDepth.Value == 1) // If call depth is 1, this is the last message
+                {
+                    Console.WriteLine("Summary: This is the last message in the call hierarchy.");
+                }
+
+                CallDepth.Value--; // Decrement call depth
             }
         }
 
-        public async ValueTask InterceptAsynchronous(IInvocation invocation)
+        public void InterceptAsynchronous(IInvocation invocation)
         {
+            CallDepth.Value++; // Increment call depth
             // Handle asynchronous methods returning Task
             var stopwatch = Stopwatch.StartNew();
 
+            // Get method information
             var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
+            var className = methodInfo.DeclaringType?.Name; // Get the class name
+            var methodName = methodInfo.Name; // Get the method name
+            var solutionName = Assembly.GetExecutingAssembly().GetName().Name; // Get the solution name
+
+            // Get custom attribute (if present)
             var logMessageAttribute = methodInfo.GetCustomAttribute<LogMessageAttribute>();
             var customMessage = logMessageAttribute?.Message;
 
-            Console.WriteLine($"Intercepting asynchronous method: {invocation.Method.Name}");
+            Console.WriteLine($"Intercepting asynchronous method with result: {invocation.Method.Name} Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
+            Console.WriteLine($"Intercepting asynchronous method with result: {methodName}");
+            Console.WriteLine($"Class Name: {className}, Solution Name: {solutionName}");
             if (!string.IsNullOrEmpty(customMessage))
             {
-                Console.WriteLine($"Custom Message: {customMessage}");
+                Console.WriteLine($"Custom Message: {customMessage} Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
             }
 
             if (invocation.Arguments.Length > 0)
             {
-                Console.WriteLine("Request (Method Arguments in JSON):");
+                Console.WriteLine($"Request (Method Arguments in JSON): Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                 var argumentsJson = JsonSerializer.Serialize(invocation.Arguments);
                 Console.WriteLine(argumentsJson);
             } 
@@ -146,42 +176,64 @@ namespace Logging
             try
             {
                 invocation.Proceed();
-                var task = (Task)invocation.ReturnValue;
-                await task;
 
+                Console.WriteLine($"Method {methodName} executed successfully.");
+
+                Console.WriteLine($"Method {invocation.Method.Name} executed successfully. Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                 Console.WriteLine("Response: Task completed.");
-                Console.WriteLine($"Method {invocation.Method.Name} executed successfully.");
+                Console.WriteLine($"Method {invocation.Method.Name} executed successfully. Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in async method {invocation.Method.Name}: {ex.Message}");
+                Console.WriteLine($"Exception in async method {invocation.Method.Name}: {ex.Message} Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                 throw;
             }
             finally
             {
                 stopwatch.Stop();
-                Console.WriteLine($"Method {invocation.Method.Name} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"Method {invocation.Method.Name} executed in {stopwatch.ElapsedMilliseconds} ms. Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
+                // Log method name, class name, solution name, and duration
+                Console.WriteLine($"Method {methodName} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"Class Name: {className}, Solution Name: {solutionName}");
+
+                // Check if this is the last message
+                if (CallDepth.Value == 1) // If call depth is 1, this is the last message
+                {
+                    Console.WriteLine("Summary: This is the last message in the call hierarchy.");
+                    Console.WriteLine($"Method {methodName} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                }
+
+                CallDepth.Value--; // Decrement call depth
             }
         }
 
-        public async ValueTask InterceptAsynchronous<TResult>(IInvocation invocation)
+        public void InterceptAsynchronous<TResult>(IInvocation invocation)
         {
+            CallDepth.Value++; // Increment call depth
             // Handle asynchronous methods returning Task<TResult>
             var stopwatch = Stopwatch.StartNew();
 
+            // Get method information
             var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
+            var className = methodInfo.DeclaringType?.Name; // Get the class name
+            var methodName = methodInfo.Name; // Get the method name
+            var solutionName = Assembly.GetExecutingAssembly().GetName().Name; // Get the solution name
+
+            // Get custom attribute (if present)
             var logMessageAttribute = methodInfo.GetCustomAttribute<LogMessageAttribute>();
             var customMessage = logMessageAttribute?.Message;
 
-            Console.WriteLine($"Intercepting asynchronous method with result: {invocation.Method.Name}");
+            Console.WriteLine($"Intercepting asynchronous method with result: {invocation.Method.Name} Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
+            Console.WriteLine($"Intercepting asynchronous method with result: {methodName}");
+            Console.WriteLine($"Class Name: {className}, Solution Name: {solutionName}");
             if (!string.IsNullOrEmpty(customMessage))
             {
-                Console.WriteLine($"Custom Message: {customMessage}");
+                Console.WriteLine($"Custom Message: {customMessage} Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
             }
 
             if (invocation.Arguments.Length > 0)
             {
-                Console.WriteLine("Request (Method Arguments in JSON):");
+                Console.WriteLine($"Request (Method Arguments in JSON): Name: {logMessageAttribute?.Application}, Environment: {logMessageAttribute.Environment}");
                 var argumentsJson = JsonSerializer.Serialize(invocation.Arguments);
                 Console.WriteLine(argumentsJson);
             }
@@ -190,23 +242,41 @@ namespace Logging
             {
                 invocation.Proceed();
                 var task = (Task<TResult>)invocation.ReturnValue;
-                var result = await task;
+                var result = task.GetAwaiter().GetResult(); // Await the result
 
+                // Log response (method return value in JSON)
                 var responseJson = JsonSerializer.Serialize(result);
                 Console.WriteLine("Response (Return Value in JSON):");
                 Console.WriteLine(responseJson);
 
-                Console.WriteLine($"Method {invocation.Method.Name} executed successfully.");
+                Console.WriteLine($"Method {methodName} executed successfully.");
+
+                Console.WriteLine($"Method {invocation.Method.Name} executed successfully. Name: {logMessageAttribute?.Application}," +
+                    $" Environment: {logMessageAttribute.Environment}");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception in async method {invocation.Method.Name}: {ex.Message}");
+                Console.WriteLine($"Exception in async method {invocation.Method.Name}: {ex.Message} Name: {logMessageAttribute?.Application}, " +
+                    $"Environment: {logMessageAttribute.Environment}");
                 throw;
             }
             finally
             {
                 stopwatch.Stop();
-                Console.WriteLine($"Method {invocation.Method.Name} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"Method {invocation.Method.Name} executed in {stopwatch.ElapsedMilliseconds} ms. Name: {logMessageAttribute?.Application}," +
+                    $" Environment: {logMessageAttribute.Environment}");
+                    // Log method name, class name, solution name, and duration
+                Console.WriteLine($"Method {methodName} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                Console.WriteLine($"Class Name: {className}, Solution Name: {solutionName}");
+
+                // Check if this is the last message
+                if (CallDepth.Value == 1) // If call depth is 1, this is the last message
+                {
+                    Console.WriteLine("Summary: This is the last message in the call hierarchy.");
+                    Console.WriteLine($"Method {methodName} executed in {stopwatch.ElapsedMilliseconds} ms.");
+                }
+
+                CallDepth.Value--; // Decrement call depth
             }
         }
 
@@ -228,14 +298,6 @@ namespace Logging
             }
         }
 
-        void IAsyncInterceptor.InterceptAsynchronous(IInvocation invocation)
-        {
-            throw new NotImplementedException();
-        }
-
-        void IAsyncInterceptor.InterceptAsynchronous<TResult>(IInvocation invocation)
-        {
-            throw new NotImplementedException();
-        }
+        
     }
 }
