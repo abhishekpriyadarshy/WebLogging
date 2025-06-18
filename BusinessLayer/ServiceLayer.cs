@@ -41,7 +41,7 @@ namespace BusinessLayer
             {
                 int a, b;
                 a = 10;
-                b = 0;
+                b = 10;
                 int c = a/b;
             }
             catch (Exception ex)
