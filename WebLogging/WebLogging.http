@@ -1,0 +1,6 @@
+@WebLogging_HostAddress = http://localhost:5190
+
+GET {{WebLogging_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
