@@ -14,21 +14,29 @@ builder.Services.AddSwaggerGen();
 //builder.Services.AddScoped<IServiceLayer, ServiceLayer>();
 
 // Register the WeatherForecast proxy
-builder.Services.AddScoped<IWeatherForecast>(provider =>
-{
-    var weatherForecast = new WeatherForecast(); // Original implementation
-    var interceptor = new MethodInterceptor();  // Interceptor instance
-    return ProxyFactory.CreateProxy<IWeatherForecast>(weatherForecast, interceptor); // Wrap with proxy
-});
 
-// Add services to the container
-builder.Services.AddScoped<IServiceLayer>(provider =>
-{
-    IWeatherForecast weatherForecast = provider.GetRequiredService<IWeatherForecast>(); // Get the proxy instance
-    var serviceLayer = new ServiceLayer(weatherForecast); // Original implementation
-    var interceptor = new MethodInterceptor();         // Interceptor instance
-    return ProxyFactory.CreateProxy<IServiceLayer>(serviceLayer, interceptor); // Wrap with proxy
-});
+// Register the WeatherForecast proxy
+builder.Services.AddProxiedService<IWeatherForecast, WeatherForecast>();
+
+// Register the ServiceLayer proxy with dependency on IWeatherForecast
+builder.Services.AddProxiedServiceWithDependency<IServiceLayer, ServiceLayer, IWeatherForecast>();
+
+
+//builder.Services.AddScoped<IWeatherForecast>(provider =>
+//{
+//    var weatherForecast = new WeatherForecast(); // Original implementation
+//    var interceptor = new MethodInterceptor();  // Interceptor instance
+//    return ProxyFactory.CreateProxy<IWeatherForecast>(weatherForecast, interceptor); // Wrap with proxy
+//});
+
+//// Add services to the container
+//builder.Services.AddScoped<IServiceLayer>(provider =>
+//{
+//    IWeatherForecast weatherForecast = provider.GetRequiredService<IWeatherForecast>(); // Get the proxy instance
+//    var serviceLayer = new ServiceLayer(weatherForecast); // Original implementation
+//    var interceptor = new MethodInterceptor();         // Interceptor instance
+//    return ProxyFactory.CreateProxy<IServiceLayer>(serviceLayer, interceptor); // Wrap with proxy
+//});
 
 
 

@@ -38,7 +38,8 @@ namespace Logging
             var methodInfo = invocation.MethodInvocationTarget ?? invocation.Method;
             var className = methodInfo.DeclaringType?.Name;
             var methodName = methodInfo.Name;
-            var solutionName = Assembly.GetExecutingAssembly().GetName().Name;
+            //var solutionName = Assembly.GetExecutingAssembly().GetName().Name;
+            var solutionName = methodInfo.DeclaringType?.Assembly.GetName().Name;
 
             var logMessageAttribute = methodInfo.GetCustomAttribute<LogMessageAttribute>();
             var customMessage = logMessageAttribute?.Message;
